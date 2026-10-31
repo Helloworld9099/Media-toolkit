@@ -1,4 +1,4 @@
-"""DBS adapter contract test with a fake model; FFmpeg and real WAV I/O are executed."""
+"""DBS adapter test using a stub checkpoint and real WAV I/O."""
 
 import subprocess
 import sys
@@ -17,7 +17,7 @@ def test_scene_integration_with_mock_checkpoint(tmp_path, monkeypatch):
     subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y',
                     '-f', 'lavfi', '-i', 'sine=frequency=880:duration=1.3',
                     str(src)], check=True)
-    # Check the documented DBS inference contract rather than claiming a model was tested.
+    # Stub the model loader and validate the inference arguments.
     class StubModel:
         @classmethod
         def from_pretrained(cls, model):

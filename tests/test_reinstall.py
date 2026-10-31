@@ -1,4 +1,4 @@
-"""Regression tests for removing the broken 0.3.x install before reinstalling."""
+"""Linux installer migration tests."""
 from __future__ import annotations
 
 import pytest

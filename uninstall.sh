@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Only remove known MediaCraft-owned installations. No sudo, apt or global pip.
+# Remove managed MediaCraft files from the current user account.
 set -euo pipefail
 ROOT="$HOME/.local/share/mediacraft"
 LAUNCHER="$HOME/.local/bin/mediacraft"
 MARKER="$ROOT/.mediacraft-install"
 
-# Folder deletion has no reliable percentage. Show a live activity bar instead.
+# Display activity while removing downloaded models and packages.
 remove_with_progress() {
   local path="$1"
   echo "Removing MediaCraft private files: $path"
@@ -30,7 +30,7 @@ remove_with_progress() {
   echo "  [=======================] Done"
 }
 
-# An unrelated folder at this path is never safe to delete.
+# Check the installation marker before deleting files.
 if [[ -e "$ROOT" || -L "$ROOT" ]]; then
   if [[ -L "$ROOT" || -L "$MARKER" || ! -f "$MARKER" ]] ||
      [[ "$(cat "$MARKER" 2>/dev/null)" != 'mediacraft-managed-install-v1' ]]; then

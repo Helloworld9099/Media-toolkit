@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-command installation. No root privileges, apt, global pip, or system changes.
+# Install MediaCraft into the current user account.
 set -euo pipefail
 SOURCE="$(cd "$(dirname "$0")" && pwd -P)"
 ROOT="$HOME/.local/share/mediacraft"
@@ -39,8 +39,7 @@ if [[ -e "$LAUNCHER" || -L "$LAUNCHER" ]]; then
 fi
 mkdir -p "$ROOT" "$BIN" "$ROOT/models" "$ROOT/cache"
 printf 'mediacraft-managed-install-v1\n' > "$MARKER"
-# Indeterminate animation: installer/AI package time cannot be predicted.
-# The pip log is retained for actionable error diagnostics.
+# Show elapsed time while an installation step runs.
 run_with_progress() {
   local label="$1"
   shift
@@ -93,10 +92,7 @@ run_with_progress "Installing MediaCraft dependencies" \
   "$ROOT/venv/bin/python" -m pip install --progress-bar off --prefer-binary --no-cache-dir "$SOURCE"
 cp "$SOURCE/uninstall.sh" "$ROOT/uninstall.sh"
 chmod 755 "$ROOT/uninstall.sh"
-# Launcher manages all model caches within the private installation directory.
-# Write a complete launcher to a new file and atomically replace the old path.
-# Do not redirect into $LAUNCHER: that follows stale symlinks left by v0.2.
-# It can also overwrite the virtualenv's pip-generated entry point.
+# Replace the launcher atomically instead of following a stale symlink.
 TMP_LAUNCHER="$(mktemp "$BIN/.mediacraft-launcher.XXXXXXXX")"
 trap 'rm -f -- "$TMP_LAUNCHER"' EXIT
 cat > "$TMP_LAUNCHER" <<'LAUNCH'
@@ -119,17 +115,15 @@ mv -fT -- "$TMP_LAUNCHER" "$LAUNCHER"
 trap - EXIT
 echo '[3/3] Preparing MediaCraft video tools (FFmpeg + FFprobe)...'
 # static-ffmpeg installs both binaries inside the private virtual environment.
-# A pre-existing system binary can be used if the platform binary is inaccessible.
+# Use an existing system installation if the managed binary is unavailable.
 if ! run_with_progress "Preparing FFmpeg/FFprobe" "$LAUNCHER" doctor --prepare-video; then
   echo 'Warning: FFmpeg could not be downloaded. MediaCraft will retry automatically when needed.' >&2
 fi
-# Install a persistent PATH entry only when the user does not already have one.
-# This changes only a clearly tagged, reversible line in the user's Bash profile.
+# Add the launcher to PATH if needed.
 BASHRC="$HOME/.bashrc"
 if ! grep -Fq 'export PATH="$HOME/.local/bin:$PATH"' "$BASHRC" 2>/dev/null; then
   printf '\nexport PATH="$HOME/.local/bin:$PATH" # MEDIACRAFT_PATH_MANAGED\n' >> "$BASHRC"
 fi
-# Verify launcher at installation time, not after the user discovers a broken command.
 if ! "$LAUNCHER" --version >/dev/null 2>&1; then
   echo 'MediaCraft launcher failed its installation check. The installation is incomplete.' >&2
   exit 1
