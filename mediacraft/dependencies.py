@@ -12,6 +12,7 @@ import subprocess
 import sys
 
 from .progress import Progress
+from .platform_paths import installation_root
 
 from .common import MediaCraftError
 
@@ -20,10 +21,6 @@ DBS_ARCHIVE = (
     "https://github.com/JusperLee/Dynamic-Band-Splitting/archive/"
     "ff526463a58ee0278e7bd05c4b8bce112b743e34.zip"
 )
-
-
-def installation_root() -> Path:
-    return Path.home() / ".local" / "share" / "mediacraft"
 
 
 def in_managed_install() -> bool:
@@ -85,7 +82,7 @@ def ensure_engine(engine: str) -> None:
         return
     if not in_managed_install():
         raise MediaCraftError(
-            "This feature needs additional tools. Run ./install.sh from the MediaCraft ZIP "
+            "This feature needs additional tools. Run the MediaCraft installer "
             "to enable safe, automatic installation."
         )
     labels = {

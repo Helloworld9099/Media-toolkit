@@ -8,7 +8,7 @@ def test_engine_absent_and_not_managed_never_calls_pip(monkeypatch):
     monkeypatch.setattr(dependencies, 'find_spec', lambda name: None)
     monkeypatch.setattr(dependencies, 'in_managed_install', lambda: False)
     monkeypatch.setattr(dependencies, '_pip', lambda *a: (_ for _ in ()).throw(AssertionError('pip invoked')))
-    with pytest.raises(MediaCraftError, match='install.sh'):
+    with pytest.raises(MediaCraftError, match='installer'):
         dependencies.ensure_engine('background')
 
 

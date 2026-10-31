@@ -139,12 +139,13 @@ def doctor(*, prepare_video: bool = False) -> dict[str, object]:
 def _run_uninstaller() -> int:
     from .dependencies import installation_root
 
-    script = installation_root() / "uninstall.sh"
+    root = installation_root()
+    script = root / ("uninstall.ps1" if sys.platform == "win32" else ("uninstall-macos.sh" if sys.platform == "darwin" else "uninstall.sh"))
     if not script.is_file():
-        print("No installed MediaCraft uninstaller found. Use uninstall.sh from the downloaded ZIP.")
+        print("No installed MediaCraft uninstaller found. Use the installer package to uninstall.")
         return 1
     try:
-        return subprocess.run(["bash", str(script)], check=False).returncode
+        return subprocess.run((["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script)] if sys.platform == "win32" else ["bash", str(script)]), check=False).returncode
     except OSError as exc:
         raise MediaCraftError(f"Cannot open uninstaller: {exc}") from exc
 

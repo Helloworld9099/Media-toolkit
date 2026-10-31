@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mediacraft-cli"
-version = "0.5.0"
-description = "Local Linux CLI for image cutouts, audio stems, video stream extraction and design object layers"
+version = "0.6.0"
+description = "Cross-platform CLI for image cutouts, audio stems, video stream extraction and design object layers"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 license = "MIT"
