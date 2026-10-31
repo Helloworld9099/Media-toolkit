@@ -96,9 +96,12 @@ def ensure_engine(engine: str) -> None:
     if engine == "background":
         _pip("rembg[cpu]>=2.0.85,<3")
     else:
-        # CPU-only PyTorch keeps installs smaller and doesn't require CUDA.
+        # macOS wheels are published on PyPI; the CPU-only PyTorch index is for Windows/Linux.
         if find_spec("torch") is None:
-            _pip("torch", "torchaudio", "--index-url", "https://download.pytorch.org/whl/cpu")
+            if sys.platform == "darwin":
+                _pip("torch", "torchaudio")
+            else:
+                _pip("torch", "torchaudio", "--index-url", "https://download.pytorch.org/whl/cpu")
         if engine == "music":
             _pip("demucs>=4.0.1,<5")
         else:

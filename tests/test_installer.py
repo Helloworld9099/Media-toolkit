@@ -1,4 +1,13 @@
 """Exercise installer lifecycle without downloading dependencies in CI."""
+import pytest
+import sys
+
+pytestmark = pytest.mark.skipif(
+    sys.platform != "linux",
+    reason="Linux Bash installer lifecycle is tested on Linux; platform installers have separate smoke tests",
+)
+
+
 import os
 from pathlib import Path
 import subprocess

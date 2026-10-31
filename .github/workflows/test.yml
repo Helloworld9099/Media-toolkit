@@ -23,3 +23,22 @@ jobs:
         run: python -m pip install -e '.[test]'
       - name: Test
         run: python -m pytest -q
+      - name: Smoke test Windows installer and uninstaller
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Windows installation failed' }
+          & "$env:LOCALAPPDATA\MediaCraft\bin\mediacraft.cmd" --version
+          if ($LASTEXITCODE -ne 0) { throw 'Windows launcher failed' }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Windows uninstall failed' }
+          if (Test-Path "$env:LOCALAPPDATA\MediaCraft") { throw 'Windows cleanup did not remove managed files' }
+      - name: Smoke test macOS installer and uninstaller
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          bash install-macos.sh
+          "$HOME/.local/bin/mediacraft" --version
+          bash uninstall-macos.sh
+          test ! -e "$HOME/Library/Application Support/MediaCraft"

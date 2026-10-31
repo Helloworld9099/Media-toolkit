@@ -1,6 +1,15 @@
 """Regression tests for removing the broken 0.3.x install before reinstalling."""
 from __future__ import annotations
 
+import pytest
+import sys
+
+pytestmark = pytest.mark.skipif(
+    sys.platform != "linux",
+    reason="Linux Bash installer lifecycle is tested on Linux; platform installers have separate smoke tests",
+)
+
+
 import os
 from pathlib import Path
 import subprocess

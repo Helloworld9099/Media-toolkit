@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 import io
-import os
 from pathlib import Path
 import re
-import stat
+import sys
 import time
 
 import pytest
@@ -66,16 +65,26 @@ def test_redirected_output_has_readable_stage_milestones():
     assert 'done' in output
 
 
-def _make_ffmpeg_stub(tmp_path: Path, script: str) -> Path:
-    executable = tmp_path / 'fake_ffmpeg'
-    executable.write_text('#!/bin/sh\n' + script)
-    executable.chmod(executable.stat().st_mode | stat.S_IXUSR)
-    return executable
+def _make_ffmpeg_stub(tmp_path: Path, source: str, monkeypatch) -> str:
+    """Start a Python fixture even when FFmpeg flags precede command arguments."""
+    import subprocess
+
+    executable = tmp_path / 'fake_ffmpeg.py'
+    executable.write_text('import sys\n' + source, encoding='utf-8')
+    real_popen = subprocess.Popen
+
+    def portable_popen(argv, *args, **kwargs):
+        if argv[0] == 'fake-ffmpeg':
+            argv = [sys.executable, str(executable), *argv[1:]]
+        return real_popen(argv, *args, **kwargs)
+
+    monkeypatch.setattr('mediacraft.common.subprocess.Popen', portable_popen)
+    return 'fake-ffmpeg'
 
 
-def test_ffmpeg_reports_actual_processed_timestamp(tmp_path, capsys):
-    fake = _make_ffmpeg_stub(tmp_path, 'printf "out_time_us=400000\\nout_time_us=800000\\nprogress=end\\n"\n')
-    run_ffmpeg([str(fake)], label='Extract audio', duration=1.0)
+def test_ffmpeg_reports_actual_processed_timestamp(tmp_path, capsys, monkeypatch):
+    fake = _make_ffmpeg_stub(tmp_path, 'sys.stdout.write("out_time_us=400000\\nout_time_us=800000\\nprogress=end\\n")\n', monkeypatch)
+    run_ffmpeg([fake], label='Extract audio', duration=1.0)
     output = capsys.readouterr().err
     assert 'Extract audio' in output
     assert '40%' in output
@@ -83,15 +92,15 @@ def test_ffmpeg_reports_actual_processed_timestamp(tmp_path, capsys):
     assert 'done' in output
 
 
-def test_ffmpeg_failure_shows_error_without_success(tmp_path, capsys):
-    fake = _make_ffmpeg_stub(tmp_path, 'echo "Test FFmpeg failure" >&2\nexit 5\n')
+def test_ffmpeg_failure_shows_error_without_success(tmp_path, capsys, monkeypatch):
+    fake = _make_ffmpeg_stub(tmp_path, 'sys.stderr.write("Test FFmpeg failure\\n")\nraise SystemExit(5)\n', monkeypatch)
     with pytest.raises(MediaCraftError, match='Test FFmpeg failure'):
-        run_ffmpeg([str(fake)], label='Video extraction', duration=3.0)
+        run_ffmpeg([fake], label='Video extraction', duration=3.0)
     assert 'failed' in capsys.readouterr().err.lower()
 
 
-def test_generic_process_spinner_reports_failure(tmp_path, capsys):
-    fake = _make_ffmpeg_stub(tmp_path, 'echo "Model checkpoint missing" >&2\nexit 2\n')
+def test_generic_process_spinner_reports_failure(tmp_path, capsys, monkeypatch):
+    fake = _make_ffmpeg_stub(tmp_path, 'sys.stderr.write("Model checkpoint missing\\n")\nraise SystemExit(2)\n', monkeypatch)
     with pytest.raises(MediaCraftError, match='Model checkpoint missing'):
-        run_long_command([str(fake)], label='Separate song')
+        run_long_command([fake], label='Separate song')
     assert 'failed' in capsys.readouterr().err.lower()
