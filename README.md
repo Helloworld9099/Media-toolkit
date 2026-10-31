@@ -81,17 +81,9 @@ mediacraft splitdesign "artwork.svg" --force
 
 Run `mediacraft --help` for commands; advanced options are available through `mediacraft audio split`, `mediacraft video split` and `mediacraft design split`.
 
-### Design limitations
-
-For SVG input, MediaCraft exports vector elements or groups, retaining SVG definitions and styling where possible. For flattened PNG/JPG input, it extracts **disconnected foreground regions**, not the original editable Figma, Illustrator or Photoshop layers. Overlapping objects cannot be reliably recovered from a flattened image.
-
 ### Audio limitations
 
 Audio source separation is approximate: overlapping voices, music and effects may bleed between tracks. Music separation uses Demucs; speech/music/effects mode uses DBS; background removal uses rembg. These optional processing engines and model checkpoints are downloaded on first use. Downloads can be large and processing can be slow on a CPU. MediaCraft's own Python environment and model caches are kept inside its user-owned installation directory.
-
-## Progress display
-
-MediaCraft shows progress for installation, model preparation and processing. FFmpeg media operations and design exports show measurable percentages when available; model loading and other unknown-duration operations show an activity indicator and elapsed time instead of a fabricated percentage.
 
 ## Storage and quality
 
