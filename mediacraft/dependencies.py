@@ -1,0 +1,115 @@
+"""Install optional AI engines only inside the MediaCraft-owned environment.
+
+Model assets are downloaded by their upstream packages into MediaCraft-owned
+cache folders configured by the launcher. No global pip or sudo is used.
+"""
+from __future__ import annotations
+
+from importlib.util import find_spec
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+from .progress import Progress
+
+from .common import MediaCraftError
+
+# Vetted upstream archive; no git executable is necessary.
+DBS_ARCHIVE = (
+    "https://github.com/JusperLee/Dynamic-Band-Splitting/archive/"
+    "ff526463a58ee0278e7bd05c4b8bce112b743e34.zip"
+)
+
+
+def installation_root() -> Path:
+    return Path.home() / ".local" / "share" / "mediacraft"
+
+
+def in_managed_install() -> bool:
+    root = installation_root()
+    return (root / ".mediacraft-install").is_file() and (
+        Path(sys.prefix).resolve() == (root / "venv").resolve()
+    )
+
+
+def configure_private_cache() -> None:
+    """Ensure downloaded model data stays private even if launcher is bypassed."""
+    if not in_managed_install():
+        return
+    root = installation_root()
+    settings = {
+        "REMBG_HOME": root / "models/rembg",
+        "U2NET_HOME": root / "models/rembg",
+        "TORCH_HOME": root / "models/torch",
+        "HF_HOME": root / "models/huggingface",
+        "XDG_CACHE_HOME": root / "cache",
+        "NUMBA_CACHE_DIR": root / "cache/numba",
+        "PIP_NO_CACHE_DIR": "1",
+    }
+    for name, value in settings.items():
+        os.environ[name] = str(value)
+    for path in (root / "models/rembg", root / "models/torch",
+                 root / "models/huggingface", root / "cache/numba"):
+        path.mkdir(parents=True, exist_ok=True)
+
+
+def _pip(*args: str) -> None:
+    command = [sys.executable, "-m", "pip", "install", "--disable-pip-version-check",
+               "--no-input", "--no-cache-dir", "--prefer-binary", *args]
+    logs = installation_root() / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    # Keep verbose pip output out of the simple menu; save diagnostics for failures.
+    log_path = logs / "latest-download.log"
+    try:
+        with log_path.open("w", encoding="utf-8") as report:
+            with Progress("Download/install AI tools"):
+                result = subprocess.run(command, check=False, stdout=report, stderr=subprocess.STDOUT)
+    except OSError as exc:
+        raise MediaCraftError(f"Unable to start automatic installation: {exc}") from exc
+    if result.returncode:
+        last_lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()[-8:]
+        detail = "\n".join(last_lines)
+        raise MediaCraftError(
+            "Automatic download failed. Check your internet connection and disk space, "
+            "then try again. No system packages were changed.\n"
+            f"Log: {log_path}\n{detail}"
+        )
+
+
+def ensure_engine(engine: str) -> None:
+    modules = {"background": "rembg", "music": "demucs", "scene": "dbs"}
+    if engine not in modules:
+        raise ValueError(f"Unknown engine: {engine}")
+    if find_spec(modules[engine]) is not None:
+        return
+    if not in_managed_install():
+        raise MediaCraftError(
+            "This feature needs additional tools. Run ./install.sh from the MediaCraft ZIP "
+            "to enable safe, automatic installation."
+        )
+    labels = {
+        "background": "Background removal",
+        "music": "Vocal and instrument separation",
+        "scene": "Speech, music and sound-effects separation",
+    }
+    print(f"\nFirst-time setup: {labels[engine]}")
+    print("MediaCraft is downloading the required free tools automatically.")
+    print("Audio AI downloads can be large (hundreds of MB to several GB).", flush=True)
+    if engine == "background":
+        _pip("rembg[cpu]>=2.0.85,<3")
+    else:
+        # CPU-only PyTorch keeps installs smaller and doesn't require CUDA.
+        if find_spec("torch") is None:
+            _pip("torch", "torchaudio", "--index-url", "https://download.pytorch.org/whl/cpu")
+        if engine == "music":
+            _pip("demucs>=4.0.1,<5")
+        else:
+            _pip(DBS_ARCHIVE)
+    # find_spec sees newly-installed packages without restarting in standard setups.
+    # The executable entrypoint is a short-lived process, and retry is safe.
+    import importlib
+    importlib.invalidate_caches()
+    if find_spec(modules[engine]) is None:
+        raise MediaCraftError(f"{labels[engine]} was downloaded but could not be loaded. Try the command again.")
+    print("Setup complete. Processing your file...\n", flush=True)
