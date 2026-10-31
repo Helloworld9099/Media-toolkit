@@ -71,9 +71,7 @@ MediaCraft shows progress for installation, model preparation and processing. FF
 
 ## Privacy and files
 
-MediaCraft processes your files on your machine. It does not require a MediaCraft account or upload media to a MediaCraft server. Initial dependency and model downloads contact third-party package/model hosts. Do not commit private media files, generated manifests, credentials or downloaded model weights to a public repository.
-
-The repository intentionally contains source code, installation scripts, tests and a small synthetic SVG fixture. It does not contain model weights, user media, private configuration or build outputs.
+MediaCraft processes your files on your machine. It does not require an account or any data sharing. Initial dependency and model downloads contact third-party package/model hosts. Do not commit private media files, generated manifests, credentials or downloaded model weights to a public repository.
 
 ## Uninstall
 
