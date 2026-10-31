@@ -1,6 +1,6 @@
 # MediaCraft
 
-**Local media-processing tools for the Linux terminal.** MediaCraft separates video and audio tracks, removes image backgrounds, separates audio sources, and exports individual design elements. It uses short commands and saves generated files next to the source by default.
+**Local media-processing tools for the Linux terminal.** MediaCraft allows users to seperate video and audio tracks, removes image backgrounds, separates audio sources, and exports individual design elements.
 
 ## Commands
 
