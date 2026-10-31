@@ -1,9 +1,4 @@
-"""Small dependency-free terminal progress display.
-
-A numeric percentage is shown only for work with a measurable total.
-Unknown-duration operations show a moving bar and elapsed time instead.
-No work is delegated to the UI thread: the worker only refreshes the display.
-"""
+"""Terminal progress reporting for long-running operations."""
 from __future__ import annotations
 
 import os
@@ -67,7 +62,6 @@ class Progress:
             else:
                 print(f"MediaCraft: {self.label}: {status.lower()} ({self._time(elapsed)})",
                       file=self.stream, flush=True)
-        # Do not swallow exceptions.
         return None
 
     @staticmethod
@@ -81,7 +75,6 @@ class Progress:
             if detail is not None:
                 self.detail = detail
             if not self._tty and self.total:
-                # Keep logs useful without emitting a line for every media frame.
                 bucket = min(4, int(4 * self.current / self.total))
                 if bucket > self._last_bucket and bucket > 0 and bucket < 4:
                     self._last_bucket = bucket

@@ -1,8 +1,4 @@
-"""Install optional AI engines only inside the MediaCraft-owned environment.
-
-Model assets are downloaded by their upstream packages into MediaCraft-owned
-cache folders configured by the launcher. No global pip or sudo is used.
-"""
+"""Optional processing dependencies and model cache paths."""
 from __future__ import annotations
 
 from importlib.util import find_spec
@@ -16,7 +12,7 @@ from .platform_paths import installation_root
 
 from .common import MediaCraftError
 
-# Vetted upstream archive; no git executable is necessary.
+# Pinned DBS source archive.
 DBS_ARCHIVE = (
     "https://github.com/JusperLee/Dynamic-Band-Splitting/archive/"
     "ff526463a58ee0278e7bd05c4b8bce112b743e34.zip"
@@ -31,7 +27,7 @@ def in_managed_install() -> bool:
 
 
 def configure_private_cache() -> None:
-    """Ensure downloaded model data stays private even if launcher is bypassed."""
+    """Set cache directories for managed installations."""
     if not in_managed_install():
         return
     root = installation_root()
@@ -56,7 +52,7 @@ def _pip(*args: str) -> None:
                "--no-input", "--no-cache-dir", "--prefer-binary", *args]
     logs = installation_root() / "logs"
     logs.mkdir(parents=True, exist_ok=True)
-    # Keep verbose pip output out of the simple menu; save diagnostics for failures.
+    # Retain pip output for installation errors.
     log_path = logs / "latest-download.log"
     try:
         with log_path.open("w", encoding="utf-8") as report:
@@ -106,8 +102,6 @@ def ensure_engine(engine: str) -> None:
             _pip("demucs>=4.0.1,<5")
         else:
             _pip(DBS_ARCHIVE)
-    # find_spec sees newly-installed packages without restarting in standard setups.
-    # The executable entrypoint is a short-lived process, and retry is safe.
     import importlib
     importlib.invalidate_caches()
     if find_spec(modules[engine]) is None:

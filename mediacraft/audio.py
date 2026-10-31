@@ -85,7 +85,7 @@ def _separate_music(source: Path, work: Path, *, model: str, device: str,
         raise MediaCraftError(f"Demucs output is incomplete in {output_folder}. Found: {[p.name for p in stem_files]}")
     for p in stem_files:
         p.replace(work / p.name)
-    # Do not leak the converted input or Demucs cache into the deliverable.
+    # Remove intermediate files after exporting the stems.
     import shutil
     prepared.unlink(missing_ok=True)
     shutil.rmtree(predictions, ignore_errors=True)

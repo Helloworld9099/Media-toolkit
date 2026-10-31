@@ -1,8 +1,4 @@
-"""Reversible SVG element exports and conservative connected-object raster cutouts.
-
-SVG: preserves original canvas, transforms, groups, styles and defs.
-Raster: extracts connected foreground islands, not the lost original design layers.
-"""
+"""SVG element export and raster component extraction."""
 
 from __future__ import annotations
 
@@ -68,10 +64,10 @@ def _prune_to(root: ET.Element, path: tuple[int, ...]) -> None:
 
 
 def _strip_active_svg_content(root: ET.Element) -> None:
-    """Remove obvious active SVG content without pretending to sanitize all SVG/CSS.
+    """Remove scripts and event handlers from SVG exports.
 
-    In particular, exports are not trusted web documents. External image and
-    stylesheet references are otherwise preserved for fidelity.
+    External references are retained, so exported SVGs are not safe to
+    embed directly in untrusted web pages.
     """
     for node in root.iter():
         for child in list(node):
@@ -111,7 +107,6 @@ def split_svg(source: Path, stage: Path, *, depth: int, prefix: str) -> dict:
             filename = f"{prefix}_part_{i}_{label}.svg"
             export_root = copy.deepcopy(root)
             _prune_to(export_root, path)
-            # It is still a vector image with the original canvas/viewBox and references.
             ET.ElementTree(export_root).write(stage / filename, encoding="utf-8", xml_declaration=True)
             entries.append({"file": filename, "id": original.get("id"), "tag": tag,
                             "drawable_path": list(path)})

@@ -1,4 +1,4 @@
-"""Shared file and subprocess safety boundaries for media processors."""
+"""File handling and subprocess helpers."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from collections.abc import Iterator
 
 
 class MediaCraftError(Exception):
-    """User-actionable failure, shown without a Python traceback."""
+    """Error reported to the user."""
 
 
 def source_file(path: str | Path) -> Path:
@@ -96,7 +96,7 @@ def require_program(name: str) -> str:
 
 
 def run_command(argv: list[str], *, quiet: bool = False) -> subprocess.CompletedProcess[str]:
-    """No shell, no interpolation and detailed FFmpeg/Demucs errors."""
+    """Run a command without a shell."""
     try:
         return subprocess.run(
             argv,
@@ -166,7 +166,7 @@ def run_ffmpeg(argv: list[str], *, label: str, duration: float | None = None) ->
 
 
 def run_long_command(argv: list[str], *, label: str) -> None:
-    """Display elapsed, moving activity bar for commands without progress APIs."""
+    """Show progress for commands without a completion estimate."""
     from .progress import Progress
 
     with tempfile.TemporaryFile(mode="w+t", encoding="utf-8") as log:

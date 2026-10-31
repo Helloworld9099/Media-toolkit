@@ -1,4 +1,4 @@
-"""Simple, direct commands for local media processing; no numbered menu."""
+"""Command-line interface for MediaCraft."""
 from __future__ import annotations
 
 import argparse
@@ -34,7 +34,7 @@ def make_parser(*, include_legacy: bool = False) -> argparse.ArgumentParser:
         prog="mediacraft",
         usage="mediacraft <command> [file] [options]",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="MediaCraft - easy Linux commands for images, audio, video and designs.",
+        description="Media processing from the command line.",
         epilog=(
             "Examples:\n"
             "  mediacraft removebackground photo.jpg\n"
@@ -68,7 +68,6 @@ def make_parser(*, include_legacy: bool = False) -> argparse.ArgumentParser:
     if not include_legacy:
         return parser
 
-    # Keep the advanced commands from v0.2/v0.3 so existing scripts still work.
     image = subcommands.add_parser("image", help="Advanced background-removal options")
     image_cmd = image.add_subparsers(dest="action", required=True)
     bg = image_cmd.add_parser("remove", help="Remove a background")
@@ -203,7 +202,6 @@ def _show_saved(tool: str, path: str, destination: Path) -> None:
         files = info["outputs"]
     else:
         files = [entry["file"] for entry in info["components"]]
-    # Keep the original/processed media; hide only MediaCraft's internal manifest.
     manifest.unlink()
     print(f"Created {len(files)} files in {destination}:")
     for file in files:
@@ -213,12 +211,10 @@ def _show_saved(tool: str, path: str, destination: Path) -> None:
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
-    # Only show the simple commands in normal help. Legacy commands are still parsed.
     parser = make_parser(include_legacy=bool(argv and argv[0] in ("image", "audio", "video", "design")))
     if not argv:
         parser.print_help()
         return 0
-    # Older v0.3 aliases work without cluttering the normal help screen.
     if argv[0] in LEGACY_ALIASES:
         argv = [LEGACY_ALIASES[argv[0]], *argv[1:]]
     from .dependencies import configure_private_cache

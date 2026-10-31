@@ -11,7 +11,6 @@ from .common import MediaCraftError, output_path, output_prefix, publish_file, s
 from .progress import Progress
 
 
-# Keep model names explicit, so mistyped models do not trigger confusing downloads.
 MODELS = ("bria-rmbg", "u2netp", "u2net", "isnet-general-use", "birefnet-general", "birefnet-portrait")
 
 
