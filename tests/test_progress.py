@@ -22,7 +22,7 @@ def test_measured_bar_has_percentage_and_finishes_at_100():
     stream = FakeTTY()
     with Progress('Export components', total=4, stream=stream, refresh=.01) as bar:
         bar.update(1)
-        time.sleep(.04)
+        bar._write_frame()
         bar.update(4)
     output = stream.getvalue()
     assert '25%' in output
