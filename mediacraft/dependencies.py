@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 from importlib.util import find_spec
+import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -24,6 +26,30 @@ def in_managed_install() -> bool:
     return (root / ".mediacraft-install").is_file() and (
         Path(sys.prefix).resolve() == (root / "venv").resolve()
     )
+
+
+def pipx_environment() -> str | None:
+    """Return the pipx environment holding MediaCraft, if any."""
+    if in_managed_install():
+        return None
+    try:
+        metadata = json.loads(
+            (Path(sys.prefix) / "pipx_metadata.json").read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(metadata, dict):
+        return None
+    package = metadata.get("main_package")
+    if not isinstance(package, dict):
+        return None
+    name = package.get("package")
+    if not isinstance(name, str) or name.lower().replace("_", "-") != "mediacraft-cli":
+        return None
+    environment = metadata.get("environment")
+    if isinstance(environment, str) and environment.strip():
+        return environment.strip()
+    return Path(sys.prefix).name
 
 
 def configure_private_cache() -> None:
@@ -48,8 +74,20 @@ def configure_private_cache() -> None:
 
 
 def _pip(*args: str) -> None:
-    command = [sys.executable, "-m", "pip", "install", "--disable-pip-version-check",
-               "--no-input", "--no-cache-dir", "--prefer-binary", *args]
+    if in_managed_install():
+        command = [sys.executable, "-m", "pip", "install", "--disable-pip-version-check",
+                   "--no-input", "--no-cache-dir", "--prefer-binary", *args]
+    else:
+        environment = pipx_environment()
+        if environment is None:
+            raise MediaCraftError("Automatic installation requires the MediaCraft installer or pipx.")
+        pipx = shutil.which("pipx")
+        if pipx is None:
+            raise MediaCraftError(
+                "pipx is not on PATH. Install pipx or use the MediaCraft installer "
+                "to enable optional audio and image processing."
+            )
+        command = [pipx, "inject", environment, *args]
     logs = installation_root() / "logs"
     logs.mkdir(parents=True, exist_ok=True)
     # Retain pip output for installation errors.
@@ -76,10 +114,10 @@ def ensure_engine(engine: str) -> None:
         raise ValueError(f"Unknown engine: {engine}")
     if find_spec(modules[engine]) is not None:
         return
-    if not in_managed_install():
+    if not in_managed_install() and pipx_environment() is None:
         raise MediaCraftError(
-            "This feature needs additional tools. Run the MediaCraft installer "
-            "to enable safe, automatic installation."
+            "This feature needs additional tools. Use pipx to install mediacraft-cli "
+            "or run the MediaCraft installer to enable safe, automatic installation."
         )
     labels = {
         "background": "Background removal",
