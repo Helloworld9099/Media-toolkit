@@ -1,0 +1,71 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and verify distributions
+    if: github.event.release.prerelease == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Match GitHub release tag to package version
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          import tomllib
+          from pathlib import Path
+          from mediacraft import __version__
+          tag = os.environ["GITHUB_REF_NAME"]
+          version = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+          if not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", tag):
+              raise SystemExit(f"Expected a vMAJOR.MINOR.PATCH tag; got {tag!r}")
+          if tag != f"v{version}" or __version__ != version:
+              raise SystemExit(f"Version mismatch: tag={tag}, pyproject={version}, package={__version__}")
+          PY
+      - name: Build and check package
+        run: |
+          python -m pip install --disable-pip-version-check build twine
+          python -m build
+          python -m twine check --strict dist/*
+      - name: Smoke-test package CLI
+        shell: bash
+        run: |
+          python -m venv "$RUNNER_TEMP/mediacraft-wheel"
+          "$RUNNER_TEMP/mediacraft-wheel/bin/python" -m pip install --no-deps dist/*.whl
+          "$RUNNER_TEMP/mediacraft-wheel/bin/mediacraft" --version
+          "$RUNNER_TEMP/mediacraft-wheel/bin/mediacraft" --help
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-distributions
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: Upload distribution to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/mediacraft-cli
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-distributions
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
