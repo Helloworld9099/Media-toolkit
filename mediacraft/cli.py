@@ -41,7 +41,9 @@ def make_parser(*, include_legacy: bool = False) -> argparse.ArgumentParser:
             "  mediacraft separatesounds recording.mp3\n"
             "  mediacraft separatesong music.mp3\n"
             "  mediacraft splitvideo clip.mp4\n"
-            "  mediacraft splitdesign logo.svg\n"\n            "  mediacraft convertimage photo.png webp\n"\n            "  mediacraft convertvideo clip.mov mp4\n\n"
+            "  mediacraft splitdesign logo.svg\n"
+            "  mediacraft convertimage photo.png webp\n"
+            "  mediacraft convertvideo clip.mov mp4\n\n"
             "Generated files are saved next to the source by default.\n"
             "Use --force only when you want to replace existing outputs."
         ),
