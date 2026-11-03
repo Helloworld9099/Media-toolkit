@@ -34,19 +34,21 @@ def make_parser(*, include_legacy: bool = False) -> argparse.ArgumentParser:
         prog="mediacraft",
         usage="mediacraft <command> [file] [options]",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="Media processing from the command line.",
+        description="MediaCraft Pro: command-line media tools.",
         epilog=(
             "Examples:\n"
             "  mediacraft removebackground photo.jpg\n"
             "  mediacraft separatesounds recording.mp3\n"
             "  mediacraft separatesong music.mp3\n"
             "  mediacraft splitvideo clip.mp4\n"
-            "  mediacraft splitdesign logo.svg\n\n"
+            "  mediacraft splitdesign logo.svg\n"
+            "  mediacraft convertimage photo.png webp\n"
+            "  mediacraft convertvideo clip.mov mp4\n\n"
             "Generated files are saved next to the source by default.\n"
             "Use --force only when you want to replace existing outputs."
         ),
     )
-    parser.add_argument("--version", action="version", version=f"MediaCraft {__version__}")
+    parser.add_argument("--version", action="version", version=f"MediaCraft Pro {__version__}")
     subcommands = parser.add_subparsers(dest="tool", title="commands")
     easy = (
         ("removebackground", "Remove an image background"),
@@ -60,6 +62,52 @@ def make_parser(*, include_legacy: bool = False) -> argparse.ArgumentParser:
         command.add_argument("input", help="Input file path (quote paths containing spaces)")
         command.add_argument("-o", "--output", help="Optional output folder (or PNG path for background removal)")
         command.add_argument("--force", action="store_true", help="Replace MediaCraft outputs with the same names")
+
+    formats = ("jpg", "jpeg", "png", "webp", "avif")
+    vformats = ("mp4", "mov", "mkv", "avi", "webm", "wmv")
+    images = subcommands.add_parser("convertimage", help="Convert one or more images")
+    images.add_argument("inputs", nargs="+", help="Input image paths")
+    images.add_argument("format", choices=formats, help="Output format")
+    images.add_argument("-o", "--output", help="Output path or directory")
+    images.add_argument("--quality", type=int, default=95, help="Lossy quality, 1-100 (default: 95)")
+    images.add_argument("--force", action="store_true", help="Replace existing outputs")
+
+    videos = subcommands.add_parser("convertvideo", help="Convert one or more videos")
+    videos.add_argument("inputs", nargs="+", help="Input video paths")
+    videos.add_argument("format", choices=vformats, help="Output format")
+    videos.add_argument("-o", "--output", help="Output path or directory")
+    videos.add_argument("--force", action="store_true", help="Replace existing outputs")
+
+    editor = subcommands.add_parser("editimage", help="Crop, resize and adjust an image")
+    editor.add_argument("input", help="Input image")
+    editor.add_argument("-o", "--output", help="Output image (defaults to PNG)")
+    editor.add_argument("--crop", help="Crop rectangle: x,y,width,height")
+    editor.add_argument("--resize", help="Dimensions: WIDTHxHEIGHT")
+    editor.add_argument("--rotate", type=float, help="Rotate counterclockwise in degrees")
+    editor.add_argument("--flip", choices=("horizontal", "vertical"))
+    for name in ("brightness", "contrast", "saturation", "sharpness"):
+        editor.add_argument("--" + name, type=float, default=1.0)
+    editor.add_argument("--grayscale", action="store_true")
+    editor.add_argument("--sepia", action="store_true")
+    editor.add_argument("--blur", type=float, default=0.0)
+    editor.add_argument("--force", action="store_true", help="Replace existing output")
+
+    gif = subcommands.add_parser("creategif", help="Create a GIF from images or video")
+    gif.add_argument("inputs", nargs="+", help="Images in playback order, or a single video")
+    gif.add_argument("-o", "--output", help="Output GIF path or directory")
+    gif.add_argument("--fps", type=int, default=10)
+    gif.add_argument("--width", type=int, default=480)
+    gif.add_argument("--start", type=float, default=0.0, help="Video starting position in seconds")
+    gif.add_argument("--duration", type=float, default=5.0, help="Video clip duration in seconds")
+    gif.add_argument("--force", action="store_true", help="Replace existing output")
+
+    collage = subcommands.add_parser("collage", help="Arrange images into a grid")
+    collage.add_argument("inputs", nargs="+", help="Input image paths (two or more)")
+    collage.add_argument("-o", "--output", help="Output PNG path or directory")
+    collage.add_argument("--columns", type=int, default=2)
+    collage.add_argument("--tile", type=int, default=500, help="Tile size in pixels")
+    collage.add_argument("--gap", type=int, default=8, help="Spacing in pixels")
+    collage.add_argument("--force", action="store_true", help="Replace existing output")
 
     health = subcommands.add_parser("doctor", help="Check installed processing tools")
     health.add_argument("--json", action="store_true")
@@ -231,7 +279,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.json:
                 print(json.dumps(result, indent=2))
             elif not args.prepare_video:
-                print(f"MediaCraft {result['version']}")
+                print(f"MediaCraft Pro {result['version']}")
                 for key, label in (
                     ("required_programs", "Video tools"),
                     ("required_python", "Core tools"),
@@ -241,6 +289,33 @@ def main(argv: list[str] | None = None) -> int:
                     for name, present in result[key].items():
                         description = "Ready" if present else "On demand" if key == "optional_engines" else "Missing"
                         print(f"  {description}: {name}")
+            return 0
+        if args.tool in ("convertimage", "convertvideo", "editimage", "creategif", "collage"):
+            from . import media_tools
+            if args.tool in ("convertimage", "convertvideo"):
+                conversion = media_tools.convert_image if args.tool == "convertimage" else media_tools.convert_video
+                if args.output and len(args.inputs) > 1 and Path(args.output).suffix:
+                    raise MediaCraftError("For multiple inputs, -o must be a directory.")
+                for path in args.inputs:
+                    options = {"output": args.output, "force": args.force}
+                    if args.tool == "convertimage":
+                        options["quality"] = args.quality
+                    print(f"Saved: {conversion(path, args.format, **options)}")
+            elif args.tool == "editimage":
+                keys = ("output", "crop", "resize", "rotate", "flip", "brightness", "contrast",
+                        "saturation", "sharpness", "grayscale", "sepia", "blur", "force")
+                options = {key: getattr(args, key) for key in keys}
+                saved = media_tools.edit_image(args.input, **options)
+                print(f"Saved: {saved}")
+            elif args.tool == "creategif":
+                saved = media_tools.create_gif(args.inputs, output=args.output, fps=args.fps,
+                                              width=args.width, start=args.start,
+                                              duration=args.duration, force=args.force)
+                print(f"Saved: {saved}")
+            else:
+                saved = media_tools.collage(args.inputs, output=args.output, columns=args.columns,
+                                            tile=args.tile, gap=args.gap, force=args.force)
+                print(f"Saved: {saved}")
             return 0
         if args.tool in COMMANDS:
             tool = COMMANDS[args.tool]
