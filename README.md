@@ -1,4 +1,4 @@
-# MediaCraft Pro
+# Media Toolkit
 
 Local media tools for Windows, macOS, and Linux. The command remains `mediacraft`.
 
