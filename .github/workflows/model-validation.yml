@@ -1,0 +1,58 @@
+name: Verify optional AI models
+
+on:
+  push:
+    paths: ['.github/workflows/model-validation.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-inference:
+    name: models (${{ matrix.os }})
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependencies
+        run: python -m pip install -e '.[test]'
+      - name: Prepare native FFmpeg
+        run: python tests/prepare_ffmpeg.py
+      - name: Install MediaCraft (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: bash install.sh
+      - name: Install MediaCraft (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Windows installation failed' }
+      - name: Install MediaCraft (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: bash install-macos.sh
+      - name: Run actual model downloads and inference (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: python tests/smoke_live_models.py --python "$HOME/.local/share/mediacraft/venv/bin/python"
+      - name: Run actual model downloads and inference (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python tests/smoke_live_models.py --python "$env:LOCALAPPDATA\MediaCraft\venv\Scripts\python.exe"
+          if ($LASTEXITCODE -ne 0) { throw 'Windows model verification failed' }
+      - name: Run actual model downloads and inference (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: python tests/smoke_live_models.py --python "$HOME/Library/Application Support/MediaCraft/venv/bin/python"
