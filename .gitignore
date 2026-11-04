@@ -1,8 +1,7 @@
-# Public source, tests and installation scripts.
+# Track only the public application source and installers.
 /*
 !/.gitignore
 !/.gitattributes
-!/.github/
 !/README.md
 !/LICENSE
 !/pyproject.toml
@@ -14,26 +13,14 @@
 !/uninstall.ps1
 !/uninstall-macos.sh
 !/mediacraft/
-!/tests/
 !/examples/
 
-# Files allowed inside the source directories.
 /mediacraft/*
 !/mediacraft/*.py
-/tests/*
-!/tests/*.py
 /examples/*
 !/examples/sample.svg
-!/examples/test_media/
-/examples/test_media/*
-!/examples/test_media/sample_layers.svg
-/.github/*
-!/.github/workflows/
-/.github/workflows/*
-!/.github/workflows/*.yml
-!/.github/workflows/*.yaml
 
-# Local Python artifacts.
+# Ignore development and local artifacts.
 **/__pycache__/
 **/*.py[cod]
 **/*.egg-info/

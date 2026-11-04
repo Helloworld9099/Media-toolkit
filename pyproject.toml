@@ -23,14 +23,9 @@ dependencies = [
 background = ["rembg[cpu]>=2.0.85,<3"]
 music = ["demucs>=4.0.1,<5"]
 scene = ["torch>=2.3,<3", "soundfile>=0.12,<1", "huggingface-hub>=0.25,<3", "einops>=0.8,<1", "rotary-embedding-torch>=0.8,<1", "safetensors>=0.4,<1"]
-test = ["pytest>=8,<10"]
 
 [project.scripts]
 mediacraft = "mediacraft.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["mediacraft*"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-ra"

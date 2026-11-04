@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="600" height="340" viewBox="0 0 600 340">
-  <title>MediaCraft four independently editable vector groups</title>
-  <defs><linearGradient id="sunGradient" x1="0" x2="1"><stop stop-color="#FFCF69"/><stop offset="1" stop-color="#EE6C4D"/></linearGradient></defs>
-  <g id="sun"><circle cx="85" cy="110" r="61" fill="url(#sunGradient)"/></g>
-  <g id="tree"><path d="M225 177L290 40L355 177Z" fill="#248068"/><rect x="280" y="166" width="20" height="55" rx="4" fill="#714D39"/></g>
-  <g id="wordmark"><text x="65" y="285" font-family="DejaVu Sans, sans-serif" font-size="50" font-weight="bold" fill="#172B3A">MEDIA</text><text x="252" y="285" font-family="DejaVu Sans, sans-serif" font-size="50" font-weight="bold" fill="#EE6C4D">CRAFT</text></g>
-  <g id="accent"><path d="M405 130 Q 468 28 545 130" stroke="#376CB5" stroke-width="18" stroke-linecap="round" fill="none"/><circle cx="477" cy="95" r="11" fill="#376CB5"/></g>
-</svg>

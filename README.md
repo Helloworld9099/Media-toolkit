@@ -57,15 +57,6 @@ mediacraft uninstall
 
 For older Linux installations, `bash reinstall.sh` resets MediaCraft's managed installation. Uninstallation preserves user media and processed outputs.
 
-## Development
-
-```bash
-python -m pip install -e '.[test]'
-python -m pytest -q
-```
-
-CI covers Python tests and installer smoke tests on Linux, Windows and macOS. Optional inference models are not exercised by the automated suite.
-
 ## License
 
 MediaCraft Pro CLI source is licensed under [MIT](LICENSE). Third-party processing libraries and pretrained models have their own licenses. The feature ideas from [Sacsam005/MediaCraft-PRO](https://github.com/Sacsam005/MediaCraft-PRO) were independently implemented; no code or assets were copied from that unlicensed project.
