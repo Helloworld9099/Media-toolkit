@@ -28,3 +28,13 @@
 **/.mypy_cache/
 **/.ruff_cache/
 **/.coverage*
+
+# Internal-only tests and development reports.
+/tests/
+/test/
+/pytest.ini
+/tox.ini
+/.tox/
+/coverage/
+/htmlcov/
+/.coverage
