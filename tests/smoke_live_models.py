@@ -46,7 +46,7 @@ def main() -> None:
     parser.add_argument("--python", type=Path, required=True)
     parser.add_argument("--engine", choices=("background", "music", "scene", "all"), default="all")
     args = parser.parse_args()
-    python = args.python.resolve()
+    python = args.python.absolute()
     if not python.is_file():
         raise RuntimeError(f"Managed Python not found: {python}")
     modes = ("background", "music", "scene") if args.engine == "all" else (args.engine,)
