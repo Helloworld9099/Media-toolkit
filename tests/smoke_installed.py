@@ -26,7 +26,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--python", required=True, type=Path)
     options = parser.parse_args()
-    python = options.python.resolve()
+    python = options.python.absolute()
     if not python.is_file():
         raise RuntimeError(f"Managed Python not found: {python}")
     for binary in ("ffmpeg", "ffprobe"):
